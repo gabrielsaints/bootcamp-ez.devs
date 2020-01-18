@@ -1,11 +1,33 @@
 const Dev = require(`../models/Dev`);
 const api = require(`../service/api`);
 
-const index = async (_, res) => {
+const index = async (req, res) => {
   try {
-    const devs = await Dev.find({});
+    const { user } = req.headers;
 
-    res.json(devs);
+    const logged = await Dev.findById(user);
+
+    const users = await Dev.find({
+      $and: [
+        {
+          _id: {
+            $ne: user
+          }
+        },
+        {
+          _id: {
+            $nin: logged.likes
+          }
+        },
+        {
+          _id: {
+            $nin: logged.dislikes
+          }
+        }
+      ]
+    });
+
+    res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -34,7 +56,6 @@ const store = async (req, res) => {
 
     res.status(200).json(dev);
   } catch (err) {
-    console.log(err.message);
     res.status(500).json({
       error: err.message
     });
