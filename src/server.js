@@ -1,10 +1,23 @@
+/* eslint-disable arrow-parens */
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const router = require("./routes");
-// const server = require(`https`);
+
+const server = require(`http`);
+const socketServer = require(`socket.io`);
 
 const app = express();
+const appServer = server.Server(app);
+
+const io = socketServer(appServer);
+
+const userConnected = {};
+
+io.on("connection", socket => {
+  const { user } = socket.handshake.query;
+  userConnected[user] = socket.id;
+});
 
 mongoose.connect(
   "mongodb+srv://ezdevs:ez123devs@cluster0-1nal0.mongodb.net/ezcamp?retryWrites=true&w=majority",
@@ -14,16 +27,15 @@ mongoose.connect(
   }
 );
 
+app.use((req, res, next) => {
+  req.io = io;
+  req.connectedUsers = userConnected;
+
+  return next();
+});
+
 app.use(cors());
 app.use(express.json());
-
-app.listen(3000);
-
 app.use(router);
 
-console.log("API started at 3000");
-
-/**
- * server.Server(app)
- * server.listen()
- */
+appServer.listen(3000);

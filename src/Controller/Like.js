@@ -14,6 +14,21 @@ const store = async (req, res) => {
         error: "User not found"
       });
     }
+
+    if (target.likes.includes(logged._id)) {
+      // its a match
+      const loggedSocket = req.connectedUsers[user];
+      const targetSocket = req.connectedUsers[id];
+
+      if (loggedSocket) {
+        req.io.to(loggedSocket).emit("match", target);
+      }
+
+      if (targetSocket) {
+        req.io.to(targetSocket).emit(`match`, logged);
+      }
+    }
+
     logged.likes.push(target._id);
     await logged.save();
 
